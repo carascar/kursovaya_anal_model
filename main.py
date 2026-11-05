@@ -8,6 +8,8 @@ class Params:
     mu2: float      #Интенсивность обслуживания прибора2
     d: int               #порог: если |n1-n2| > d, одно требование перебрасывается
     N: int = 40          #усечение n1+n2<N
+    i: int = 2
+    j: int = 2
 
 
 def build_states(p:Params):
@@ -17,8 +19,8 @@ def build_states(p:Params):
     states = [] #нужно для поиска состояния по индексу
     index = {} #нужно для поиска индекса по состоянию
 
-    for n1 in range(p.N+1):
-        for n2 in range(p.N+1 - n1):
+    for n1 in range(p.i+1):
+        for n2 in range(p.j+1):
             if n1-n2 > p.d or n2-n1 > p.d:
                 continue
             for s1 in (0, 1):
@@ -139,7 +141,7 @@ def compute_metrics(pi, states, p: Params):
         "rho1": 0.0, "rho2": 0.0,
         "P_both_busy": 0.0, "P_empty": 0.0,
         "P_imbalance": 0.0,
-        "W":0.0,
+        "W_total":0.0,
     }
     for k, (n1, s1, n2, s2) in enumerate(states):
         w = pi[k]
@@ -160,9 +162,35 @@ def compute_metrics(pi, states, p: Params):
     return m
 
 
+def experiment1():
+    p = Params(lam=10, mu1 = 100.0, mu2 = 100.0, d=1, N=30)
+
+    for i in range(10, 200, 10):
+        p.lam=i
+        states, index = build_states(p)
+        #print(f"Число состояний: {len(states)}")
+
+        Q = build_generator(p, states, index)
+        #print(f"Размер Q: {Q.shape}")
+        #print(f"Макс. |сумма строки|: {np.abs(Q.sum(axis=1)).max():.2e}")
+
+        pi = solve_stationary(Q)
+        #print(f"Σπ = {pi.sum():.6f},  min π = {pi.min():.2e}")
+
+        m = compute_metrics(pi, states, p)
+        #print("\n=== Характеристики ===")
+
+        if p.lam==10:
+            for k, v in m.items():
+                print(f"{k:>14}", end='')
+            print()
+        for k, v in m.items():
+            print(f"{i}\t{v:>14.2f}", end='')
+        print()
+
 # ---------------- ЗАПУСК ----------------
 if __name__ == "__main__":
-    p = Params(lam=190.0, mu1=100.0, mu2=100.0, d=1, N=30)
+    p = Params(lam=3, mu1=1, mu2=2, d=1, N=30)
 
     states, index = build_states(p)
     print(f"Число состояний: {len(states)}")
@@ -178,6 +206,13 @@ if __name__ == "__main__":
     print("\n=== Характеристики ===")
     for k, v in m.items():
         print(f"{k:>14}: {v:.6f}")
+
+    print("\n===вероятности состояний системы===")
+    for i in range(len(states)):
+        print(f'P({states[i][0]+states[i][1]},{states[i][2]+states[i][3]}): {states[i]}: {pi[i]:.6f}')
+
+
+    #experiment1()
 
 
 
