@@ -85,22 +85,18 @@ def build_generator(p: Params, states, index):
         # ---------- Уход с линии 1 ----------
         if n1>0:
             cand = (n1-1, n2)
-        else:
-            cand = (n1, n2)
-        cand = apply_rebalance(cand, p.d)
-        if cand in index:
-            Q[i, index[cand]] += p.mu1
-            diag += p.mu1
+            cand = apply_rebalance(cand, p.d)
+            if cand in index:
+                Q[i, index[cand]] += p.mu1
+                diag += p.mu1
 
         # ---------- Уход с линии 2 ----------
         if n2 > 0:
-            cand = (n1, n2-1)  # сразу берёт следующего
-        else:
-            cand = (n1, n2)
-        cand = apply_rebalance(cand, p.d)
-        if cand in index:
-            Q[i, index[cand]] += p.mu2
-            diag += p.mu2
+            cand = (n1, n2-1) 
+            cand = apply_rebalance(cand, p.d)
+            if cand in index:
+                Q[i, index[cand]] += p.mu2
+                diag += p.mu2
 
         Q[i, i] = -diag
 
