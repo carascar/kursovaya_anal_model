@@ -1,6 +1,10 @@
 import numpy as np
 from dataclasses import dataclass
 
+ALL_RULES_PRIHOD = ["fast_device", "short_queue"]
+
+RULE_PRIHOD = ALL_RULES_PRIHOD[1]
+
 @dataclass
 class Params:
     lam: float      #Интенсивность входящего потока
@@ -63,24 +67,46 @@ def build_generator(p: Params, states, index):
 
         # ---------- Приход ----------
         # Встаёт в очередь более эффективного прибора.
-        if p.mu1>p.mu2:
-            targets = ['q1']
-        elif p.mu2>p.mu1:
-            targets = ['q2']
-        else:
-            targets = ['q1', 'q2']
-
-        for where in targets:
-            cn1, cn2 = n1, n2
-            if where == 'q1':
-                cn1+=1
+        if RULE_PRIHOD == "fast_device":
+            if p.mu1>p.mu2:
+                targets = ['q1']
+            elif p.mu2>p.mu1:
+                targets = ['q2']
             else:
-                cn2+=1
-            new_state =apply_rebalance((cn1, cn2), p.d)
-            if new_state in index:
-                weight = p.lam/len(targets)
-                Q[i, index[new_state]] += weight
-                diag += weight
+                targets = ['q1', 'q2']
+
+            for where in targets:
+                cn1, cn2 = n1, n2
+                if where == 'q1':
+                    cn1+=1
+                else:
+                    cn2+=1
+                new_state =apply_rebalance((cn1, cn2), p.d)
+                if new_state in index:
+                    weight = p.lam/len(targets)
+                    Q[i, index[new_state]] += weight
+                    diag += weight
+
+        elif RULE_PRIHOD == "short_queue":
+            if n1<n2:
+                targets = ['q1']
+            elif n2<n1:
+                targets = ['q2']
+            else:
+                targets = ['q1', 'q2']
+
+            for where in targets:
+                cn1, cn2 = n1, n2
+                if where == 'q1':
+                    cn1+=1
+                else:
+                    cn2+=1
+                new_state =apply_rebalance((cn1, cn2), p.d)
+                if new_state in index:
+                    weight = p.lam/len(targets)
+                    Q[i, index[new_state]] += weight
+                    diag += weight
+
 
         # ---------- Уход с линии 1 ----------
         if n1>0:
@@ -186,19 +212,16 @@ if __name__ == "__main__":
     for k, v in m.items():
         print(f"{k:>14}: {v:.6f}")
 
-    print("\n===вероятности состояний системы===")
+    print("\nвероятности состояний системы")
+    if RULE_PRIHOD == "fast_device":
+        print("по правилу быстрейшего прибора")
+    elif RULE_PRIHOD == "short_queue":
+        print("по правилу кратчайшей очереди")
     for i in range(len(states)):
         print(f'P{states[i]}: {pi[i]:.6f}')
 
 
     #experiment1()
-
-
-
-
-
-
-
 
 
 
