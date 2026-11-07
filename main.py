@@ -11,7 +11,6 @@ class Params:
     mu1: float      #Интенсивность обслуживания прибора 1
     mu2: float      #Интенсивность обслуживания прибора2
     d: int               #порог: если |n1-n2| > d, одно требование перебрасывается
-    N: int = 40          #усечение n1+n2<N
     i: int = 2
     j: int = 2
 
@@ -143,16 +142,19 @@ def compute_metrics(pi, states, p: Params):
     """Характеристики по стационарному распределению."""
     m = {
         "L1_queue": 0.0, "L2_queue": 0.0,
-        "L_total": 0.0,
+        "L1_channel":0.0, "L2_channel":0.0,
+        "L_queue": 0.0,"L_channel": 0.0,
         "rho1": 0.0, "rho2": 0.0,
         "P_both_busy": 0.0, "P_empty": 0.0,
         "P_imbalance": 0.0,
-        "W_total":0.0,
+        "W_queue":0.0, "W_total":0.0,
     }
     for k, (n1, n2) in enumerate(states):
         w = pi[k]
-        m["L1_queue"] += w * n1
-        m["L2_queue"] += w * n2
+        m["L1_queue"] += w * (n1-1) if n1-1 > 0 else 0
+        m["L2_queue"] += w * (n2-1) if n2-1 > 0 else 0
+        m["L1_channel"] += w * n1
+        m["L2_channel"] += w * n2
         m["rho1"] += w * 1 if n1>0 else 0
         m["rho2"] += w * 1 if n2>0 else 0
         if n1 > 0 and n2 > 0:
@@ -161,8 +163,13 @@ def compute_metrics(pi, states, p: Params):
             m["P_empty"] += w
         if abs(n1 - n2) > p.d:
             m["P_imbalance"] += w
-    m["L_total"] = m["L1_queue"] + m["L2_queue"]
-    m["W_total"] = m["L_total"]/p.lam
+
+    m["L_queue"] += m["L1_queue"] + m["L2_queue"]
+    m["W_queue"] = m["L_queue"] / p.lam
+
+    m["L_channel"] = m["L1_channel"] + m["L2_channel"]
+    m["W_total"] = m["L_channel"]/p.lam
+
     return m
 
 
