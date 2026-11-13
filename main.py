@@ -1,12 +1,13 @@
 import numpy as np
 from dataclasses import dataclass
+import graph
 
 ALL_RULES_PRIHOD = ["fast_device", "short_queue"]
 ALL_RULES_PEREHOD = ["perehod", "no_perehod"]
 
 
-RULE_PRIHOD = ALL_RULES_PRIHOD[1]
-RULE_PEREHOD = ALL_RULES_PEREHOD[0]
+RULE_PRIHOD = ALL_RULES_PRIHOD[0]
+RULE_PEREHOD = ALL_RULES_PEREHOD[1]
 
 @dataclass
 class Params:
@@ -150,7 +151,7 @@ def compute_metrics(pi, states, p: Params):
         "L1_queue": 0.0, "L2_queue": 0.0,
         "L1_channel":0.0, "L2_channel":0.0,
         "L_queue": 0.0,"L_channel": 0.0,
-        "rho1": 0.0, "rho2": 0.0,
+        "rho": 0.0, "rho1": 0.0, "rho2": 0.0,
         "P_both_busy": 0.0, "P_empty": 0.0,
         "P_imbalance": 0.0,
         "W_queue":0.0, "W_total":0.0,
@@ -163,6 +164,8 @@ def compute_metrics(pi, states, p: Params):
         m["L2_channel"] += w * n2
         m["rho1"] += w * 1 if n1>0 else 0
         m["rho2"] += w * 1 if n2>0 else 0
+        m["rho"] = (m["rho1"]+m["rho2"])/2.0
+
         if n1 > 0 and n2 > 0:
             m["P_both_busy"] += w
         if n1 == 0  and n2 == 0:
@@ -180,26 +183,22 @@ def compute_metrics(pi, states, p: Params):
 
 
 def experiment1():
-    RULE_PEREHOD=ALL_RULES_PEREHOD[0]
-    RULE_PRIHOD=ALL_RULES_PRIHOD[0]
     print("Эксперимент 1. Варьирование лямбды")
-    first_lam = 10
+    first_lam = 12
     p = Params(lam=first_lam, mu1 = 10.0, mu2 = 10.0, d=1, i=200, j=200)
+    x_values = []
+    y_values_dict = {"rho":[]}
 
-    for i in range(first_lam, 25, 1):
+
+    for i in range(first_lam, 22, 1):
         p.lam=i
         states, index = build_states(p)
-        #print(f"Число состояний: {len(states)}")
-
         Q = build_generator(p, states, index)
-        #print(f"Размер Q: {Q.shape}")
-        #print(f"Макс. |сумма строки|: {np.abs(Q.sum(axis=1)).max():.2e}")
-
         pi = solve_stationary(Q)
-        #print(f"Σπ = {pi.sum():.6f},  min π = {pi.min():.2e}")
-
         m = compute_metrics(pi, states, p)
-        #print("\n=== Характеристики ===")
+
+        x_values.append(i)
+        y_values_dict["rho"].append(m["rho"])
 
         if p.lam==first_lam:
             print('lam\t', end='')
@@ -210,30 +209,33 @@ def experiment1():
         for k, v in m.items():
             print(f"{v:^11.2f}", end='')
         print()
-
+    graph.plot_values(x_values, y_values_dict, title=f"Эксперимент 1(mu1={p.mu1}, mu2={p.mu2})", xlabel="лямбда",
+                      ylabel="коэффициент общей загрузка системы")
 
 
 def experiment2():
-    RULE_PEREHOD=ALL_RULES_PEREHOD[0]
-    RULE_PRIHOD=ALL_RULES_PRIHOD[0]
     print("Эксперимент 2. Варьирование порогового значения d")
     first_d = 1
-    p = Params(lam=15, mu1 = 10.0, mu2 = 11.0, d=first_d, i=200, j=200)
+    p = Params(lam=18, mu1 = 2.0, mu2 = 18.0, d=first_d, i=200, j=200)
 
-    for i in range(first_d, 15, 1):
+    x_values = []
+    y_values_dict = {"L_channel":[],
+                     "L1_channel":[],
+                     "L2_channel":[]}
+
+    for i in range(first_d, 11, 1):
         p.d=i
         states, index = build_states(p)
-        #print(f"Число состояний: {len(states)}")
-
         Q = build_generator(p, states, index)
-        #print(f"Размер Q: {Q.shape}")
-        #print(f"Макс. |сумма строки|: {np.abs(Q.sum(axis=1)).max():.2e}")
-
         pi = solve_stationary(Q)
-        #print(f"Σπ = {pi.sum():.6f},  min π = {pi.min():.2e}")
-
         m = compute_metrics(pi, states, p)
-        #print("\n=== Характеристики ===")
+
+
+        x_values.append(i)
+        #y_values.append(m["L_channel"])
+        y_values_dict["L_channel"].append(m["L_channel"])
+        y_values_dict["L1_channel"].append(m["L1_channel"])
+        y_values_dict["L2_channel"].append(m["L2_channel"])
 
         if p.d==first_d:
             print('d\t', end='')
@@ -244,21 +246,73 @@ def experiment2():
         for k, v in m.items():
             print(f"{v:^11.2f}", end='')
         print()
+    graph.plot_values(x_values, y_values_dict, title=f"Эксперимент 2(mu1={p.mu1}, mu2={p.mu2})", xlabel="d",
+                      ylabel="среднее количество требований в системе")
 
 
 def experiment3():
-    RULE_PEREHOD=ALL_RULES_PEREHOD[1]
-    RULE_PRIHOD=ALL_RULES_PRIHOD[0]
-    print("Эксперимент 3. Система без переходов требований")
-    first_lam = 10
-    p = Params(lam=first_lam, mu1 = 5.0, mu2 = 15.0, d=1, i=20, j=20)
+    print("Эксперимент 3. Ассиметрия каналов")
+    first_mu = 1
+    p = Params(lam=18, mu1 = 10.0, mu2 = 10.0, d=1, i=200, j=200)
 
-    for i in range(first_lam, 25, 1):
+    x_values = []
+    y_values_dict = {"L_channel":[],
+                     "L1_channel":[],
+                     "L2_channel":[]}
+
+    for i in range(first_mu, 11, 1):
+        p.mu1=i
+        p.mu2=20-i
+        states, index = build_states(p)
+        Q = build_generator(p, states, index)
+        pi = solve_stationary(Q)
+        m = compute_metrics(pi, states, p)
+
+
+        x_values.append(i)
+        #y_values.append(m["L_channel"])
+        y_values_dict["L_channel"].append(m["L_channel"])
+        y_values_dict["L1_channel"].append(m["L1_channel"])
+        y_values_dict["L2_channel"].append(m["L2_channel"])
+
+        if p.mu1==first_mu:
+            print(f'{'mu1':^11}'+f'{'mu2':^11}', end='')
+            for k, v in m.items():
+                print(f"{k:^11}", end='')
+            print()
+        print(f'{p.mu1:^11}'+f'{p.mu2:^11}',  end='')
+        for k, v in m.items():
+            print(f"{v:^11.2f}", end='')
+        print()
+    graph.plot_values(x_values, y_values_dict, title="Эксперимент 2(mu2=20-mu1)", xlabel="mu1",
+                      ylabel="среднее количество требований в системе")
+
+
+
+
+def experiment4():
+
+    if(RULE_PEREHOD == "perehod"):
+        print("Эксперимент 3. Система с переходом требований")
+    elif(RULE_PEREHOD == "no_perehod"):
+        print("Эксперимент 3. Система без переходов требований")
+    first_lam = 12
+    p = Params(lam=first_lam, mu1 = 1.0, mu2 = 19.0, d=1, i=50, j=50)
+    x_values=[]
+    y_values_dict = {"L_channel": [],
+                     "L1_channel": [],
+                     "L2_channel": []}
+
+    for i in range(first_lam, 22, 1):
         p.lam=i
         states, index = build_states(p)
         Q = build_generator(p, states, index)
         pi = solve_stationary(Q)
         m = compute_metrics(pi, states, p)
+        x_values.append(i)
+        y_values_dict["L_channel"].append(m["L_channel"])
+        y_values_dict["L1_channel"].append(m["L1_channel"])
+        y_values_dict["L2_channel"].append(m["L2_channel"])
 
         if p.lam==first_lam:
             print('lam\t', end='')
@@ -269,6 +323,7 @@ def experiment3():
         for k, v in m.items():
             print(f"{v:^11.2f}", end='')
         print()
+    graph.plot_values(x_values, y_values_dict, title=f"Эксперимент 3(mu1={p.mu1}, mu2={p.mu2})", xlabel="лямбда", ylabel="среднее количество требований в системе")
 
 
 
@@ -309,11 +364,25 @@ if __name__ == "__main__":
     for i in range(len(states)):
         print(f'P{states[i]}: {pi[i]:.6f}')
 
+    '''RULE_PEREHOD = "perehod"
+    RULE_PRIHOD = "short_queue"
+    experiment1()'''
 
-    #experiment1()
-    #experiment2()
-    experiment3()
 
+    '''RULE_PEREHOD = "perehod"
+    RULE_PRIHOD = "short_queue"
+    experiment2()'''
+
+    '''RULE_PEREHOD = "perehod"
+    RULE_PRIHOD = "short_queue"
+    experiment3()'''
+
+
+    RULE_PEREHOD = "perehod"
+    RULE_PRIHOD = "short_queue"
+    experiment4()
+    RULE_PEREHOD = "no_perehod"
+    experiment4()
 
 
 
