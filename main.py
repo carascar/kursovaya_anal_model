@@ -184,13 +184,13 @@ def compute_metrics(pi, states, p: Params):
 
 def experiment1():
     print("Эксперимент 1. Варьирование лямбды")
-    first_lam = 12
+    first_lam = 9
     p = Params(lam=first_lam, mu1 = 10.0, mu2 = 10.0, d=1, i=200, j=200)
     x_values = []
     y_values_dict = {"rho":[]}
 
 
-    for i in range(first_lam, 22, 1):
+    for i in range(first_lam, 20, 1):
         p.lam=i
         states, index = build_states(p)
         Q = build_generator(p, states, index)
@@ -216,7 +216,7 @@ def experiment1():
 def experiment2():
     print("Эксперимент 2. Варьирование порогового значения d")
     first_d = 1
-    p = Params(lam=18, mu1 = 2.0, mu2 = 18.0, d=first_d, i=200, j=200)
+    p = Params(lam=16, mu1 = 2.0, mu2 = 18.0, d=first_d, i=200, j=200)
 
     x_values = []
     y_values_dict = {"L_channel":[],
@@ -250,7 +250,7 @@ def experiment2():
 
 
 def experiment3():
-    print("Эксперимент 3. Ассиметрия каналов")
+    print("Эксперимент 4. Ассиметрия каналов")
     first_mu = 1
     p = Params(lam=18, mu1 = 10.0, mu2 = 10.0, d=1, i=200, j=200)
 
@@ -282,7 +282,7 @@ def experiment3():
         for k, v in m.items():
             print(f"{v:^11.2f}", end='')
         print()
-    graph.plot_values(x_values, y_values_dict, title="Эксперимент 3(mu2=20-mu1)", xlabel="mu1",
+    graph.plot_values(x_values, y_values_dict, title="Эксперимент 4(mu2=20-mu1)", xlabel="mu1",
                       ylabel="среднее количество требований в системе")
 
 
@@ -291,19 +291,19 @@ def experiment3():
 def experiment4():
 
     if(RULE_PEREHOD == "perehod"):
-        print("Эксперимент 4. Система с переходом требований")
+        print("Эксперимент 3 Система с переходом требований")
         output = "Система с переходом требований"
     elif(RULE_PEREHOD == "no_perehod"):
-        print("Эксперимент 4. Система без переходов требований")
+        print("Эксперимент 3. Система без переходов требований")
         output = "Система без переходов требований"
-    first_lam = 12
-    p = Params(lam=first_lam, mu1 = 1.0, mu2 = 19.0, d=1, i=50, j=50)
+    first_lam = 9
+    p = Params(lam=first_lam, mu1 = 5.0, mu2 = 15.0, d=1, i=50, j=50)
     x_values=[]
     y_values_dict = {"L_channel": [],
                      "L1_channel": [],
                      "L2_channel": []}
 
-    for i in range(first_lam, 22, 1):
+    for i in range(first_lam, 20, 1):
         p.lam=i
         states, index = build_states(p)
         Q = build_generator(p, states, index)
@@ -323,7 +323,7 @@ def experiment4():
         for k, v in m.items():
             print(f"{v:^11.2f}", end='')
         print()
-    graph.plot_values(x_values, y_values_dict, title=f"Эксперимент 4(mu1={p.mu1}, mu2={p.mu2}) {output}", xlabel="лямбда", ylabel="среднее количество требований в системе")
+    graph.plot_values(x_values, y_values_dict, title=f"Эксперимент 3(mu1={p.mu1}, mu2={p.mu2}) {output}", xlabel="лямбда", ylabel="среднее количество требований в системе")
 
 
 
