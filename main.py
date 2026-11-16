@@ -232,7 +232,6 @@ def experiment2():
 
 
         x_values.append(i)
-        #y_values.append(m["L_channel"])
         y_values_dict["L_channel"].append(m["L_channel"])
         y_values_dict["L1_channel"].append(m["L1_channel"])
         y_values_dict["L2_channel"].append(m["L2_channel"])
@@ -270,7 +269,6 @@ def experiment3():
 
 
         x_values.append(i)
-        #y_values.append(m["L_channel"])
         y_values_dict["L_channel"].append(m["L_channel"])
         y_values_dict["L1_channel"].append(m["L1_channel"])
         y_values_dict["L2_channel"].append(m["L2_channel"])
@@ -284,7 +282,7 @@ def experiment3():
         for k, v in m.items():
             print(f"{v:^11.2f}", end='')
         print()
-    graph.plot_values(x_values, y_values_dict, title="Эксперимент 2(mu2=20-mu1)", xlabel="mu1",
+    graph.plot_values(x_values, y_values_dict, title="Эксперимент 3(mu2=20-mu1)", xlabel="mu1",
                       ylabel="среднее количество требований в системе")
 
 
@@ -293,9 +291,11 @@ def experiment3():
 def experiment4():
 
     if(RULE_PEREHOD == "perehod"):
-        print("Эксперимент 3. Система с переходом требований")
+        print("Эксперимент 4. Система с переходом требований")
+        output = "Система с переходом требований"
     elif(RULE_PEREHOD == "no_perehod"):
-        print("Эксперимент 3. Система без переходов требований")
+        print("Эксперимент 4. Система без переходов требований")
+        output = "Система без переходов требований"
     first_lam = 12
     p = Params(lam=first_lam, mu1 = 1.0, mu2 = 19.0, d=1, i=50, j=50)
     x_values=[]
@@ -323,59 +323,25 @@ def experiment4():
         for k, v in m.items():
             print(f"{v:^11.2f}", end='')
         print()
-    graph.plot_values(x_values, y_values_dict, title=f"Эксперимент 3(mu1={p.mu1}, mu2={p.mu2})", xlabel="лямбда", ylabel="среднее количество требований в системе")
+    graph.plot_values(x_values, y_values_dict, title=f"Эксперимент 4(mu1={p.mu1}, mu2={p.mu2}) {output}", xlabel="лямбда", ylabel="среднее количество требований в системе")
 
 
 
 
 # ---------------- ЗАПУСК ----------------
 if __name__ == "__main__":
-    p = Params(lam=3, mu1=1, mu2=2, d=1, i=2, j=2)
-
-    states, index = build_states(p)
-    print(f"Число состояний: {len(states)}")
-
-    Q = build_generator(p, states, index)
-    print(f"Размер Q: {Q.shape}")
-    print(f"Макс. |сумма строки|: {np.abs(Q.sum(axis=1)).max():.2e}")
-    print(Q)
-
-    pi = solve_stationary(Q)
-    print(f"Σπ = {pi.sum():.6f},  min π = {pi.min():.2e}")
-
-    m = compute_metrics(pi, states, p)
-    print("\n=== Характеристики ===")
-    for k, v in m.items():
-        print(f"{k:>14}: {v:.6f}")
-
-    print("\nвероятности состояний системы")
-    if RULE_PRIHOD == "fast_device":
-        print("по правилу быстрейшего прибора", end=' ')
-    elif RULE_PRIHOD == "short_queue":
-        print("по правилу кратчайшей очереди", end=' ')
-
-    if RULE_PEREHOD == "perehod":
-        print("с переходами")
-        m = compute_metrics(pi, states, p)
-    elif RULE_PEREHOD == "no_perehod":
-        print("без переходов")
-        m = compute_metrics(pi, states, p)
-
-    for i in range(len(states)):
-        print(f'P{states[i]}: {pi[i]:.6f}')
-
-    '''RULE_PEREHOD = "perehod"
+    RULE_PEREHOD = "perehod"
     RULE_PRIHOD = "short_queue"
-    experiment1()'''
+    experiment1()
 
 
-    '''RULE_PEREHOD = "perehod"
+    RULE_PEREHOD = "perehod"
     RULE_PRIHOD = "short_queue"
-    experiment2()'''
+    experiment2()
 
-    '''RULE_PEREHOD = "perehod"
+    RULE_PEREHOD = "perehod"
     RULE_PRIHOD = "short_queue"
-    experiment3()'''
+    experiment3()
 
 
     RULE_PEREHOD = "perehod"
